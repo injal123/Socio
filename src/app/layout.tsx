@@ -5,6 +5,8 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
+import Navbar from "@/components/navbar/Navbar";
+
 
 
 
@@ -34,7 +36,7 @@ export default function RootLayout({
   return (
 
     <ClerkProvider>
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
           <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
             
             {/* SHADCN-UI ThemeProvider -> DARK-LIGHT MODE */}
@@ -46,7 +48,7 @@ export default function RootLayout({
             >
                 {/* OVERALL DIV */}
                 <div className="min-h-screen">
-
+                  <Navbar />
 
                   <main className="py-8">
                     {/* Container to center the content. */}
