@@ -172,4 +172,4 @@ enum NotificationType {
 
 
 
-// at the end:   npx prisma db push
+// at the end (to push all attributes):   npx prisma db push
