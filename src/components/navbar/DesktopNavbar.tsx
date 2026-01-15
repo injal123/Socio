@@ -1,4 +1,4 @@
-// server comp.
+// server component
 
 import ModeToggle from "../ModeToggle";
 
@@ -79,7 +79,7 @@ export default DesktopNavbar;
 
 
 
-// Case 2 (if no user.username isn't available then...)
+// Case 2 (if user.username isn't available then...)
 // user.username = null
 // email = "hello.world@gmail.com"
 
