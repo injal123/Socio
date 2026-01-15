@@ -19,7 +19,6 @@ import Link from "next/link";
 function MobileNavbar() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { isSignedIn } = useAuth();
-  // const { theme, setTheme } = useTheme();
 
 
   return (

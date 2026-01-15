@@ -1,12 +1,10 @@
-// learn more about Prisma schema in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma schema - Socio App
+// Learn more in docs: https://pris.ly/d/prisma-schema
 
 
 // “Generate JavaScript code so my app can talk to the database”
 generator client {
-  provider = "prisma-client-js"                       // add -js
+  provider = "prisma-client-js"           // add -js
 }
 
 // “My database is Postgres, and its address is stored in .env”
@@ -19,12 +17,13 @@ datasource db {
 
 
 
-// cuid = collision-resistant uid.
+// cuid = collision-resistant unique id.
+
 model User {
   id    String   @id @default(cuid())  // Prisma auto-generates a unique string, like ckz9xk3zv0001abc123.
+  clerkId   String   @unique
   username  String   @unique
   email     String   @unique
-  clerkId   String   @unique
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -40,12 +39,15 @@ model User {
   likes     Like[]       // "One user can like many posts."
   comments  Comment[]    // "One user can write many comments."
 
-  followers Follows[] @relation("following")  // "Many users can follow this user."
-  following Follows[] @relation("follower")   // "This user follows many other users."
+  followers Follows[] @relation("UsersWhoFollowMe")  // "Many users can follow this user."
+  following Follows[] @relation("UsersIFollow")   // "This user follows many other users."
 
-  notifications Notification[] @relation("userNotifications")   // "Notifications received by this user."
-  notificationsCreated Notification[] @relation("notificationCreator")  // "Notifications created by this user."
+  notificationsReceived Notification[] @relation("UserNotificationsReceived")   // "Notifications received by this user."
+  notificationsSent Notification[] @relation("UserNotificationsSent")  // "Notifications created by this user."
 }
+
+
+
 
 
 
@@ -54,7 +56,7 @@ model Post {
   id          String     @id @default(cuid())
   authorId    String     // post created by which user.
   content     String?    // ? -> optional, means a post can either have content or
-  image       String?    // or image, or both.
+  image       String?    // or image, or both or none(no post).
 
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -68,6 +70,10 @@ model Post {
 
 
 
+
+
+
+
 model Comment {
   id          String    @id @default(cuid())
   authorId    String   // who commented..?
@@ -77,23 +83,27 @@ model Comment {
   updatedAt   DateTime  @updatedAt
 
   // Reply system
-  parentId  String?
-  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
-  replies   Comment[] @relation("CommentReplies")
+  parentId      String?
+  parentComment Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  childComments Comment[] @relation("CommentReplies")
 
   // Relations
   author          User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
   post            Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
   notifications   Notification[]
 
-  @@index([authorId, postId]) // composite index for faster queries.
+  @@index([authorId, postId]) // composite index for faster queries - to search for a comments written by authorId in postId.
 }
+
+
+
+
 
 
 
 model Like {
   id          String    @id @default(cuid())
-  userId      String    // who liked..?
+  userId      String    // owner of this like.
   postId      String
   createdAt   DateTime  @default(now())
 
@@ -102,8 +112,11 @@ model Like {
   post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([userId, postId])   // gimme the likes done by userId in this post postId.
-  @@unique([userId, postId])  // This prevents same user liking post twice.
+  @@unique([userId, postId])  // prevents same user liking post twice.
 } 
+
+
+
 
 
 
@@ -114,12 +127,16 @@ model Follows {
   createdAt       DateTime  @default(now())
 
   // Relations
-  follower    User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  follower    User   @relation("UsersIFollow", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User   @relation("UsersWhoFollowMe", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@index([followerId, followingId])    // composite index for faster query.
-  @@unique([followerId, followingId])   // coposite primary key to prevent duplicate follows.
+  @@id([followerId, followingId])       // coposite primary key to prevent duplicate follows.
 }
+
+
+
+
 
 
 
@@ -131,18 +148,20 @@ model Notification {
 
   type        NotificationType
   read        Boolean     @default(false)
-  postId      String?
+  postId      String?   // follow-notification isn't related to post ... so its optional.
   commentId   String?
 
-  // Relations
-  user     User  @relation("userNotifications", fields: [userId], references: [id], onDelete: Cascade)     
-  creator  User  @relation("notificationCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  // Relations:
+  user     User  @relation("UserNotificationsReceived", fields: [userId], references: [id], onDelete: Cascade)     
+  creator  User  @relation("UserNotificationsSent", fields: [creatorId], references: [id], onDelete: Cascade)
 
   post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   comment   Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
+
+
 
 
 enum NotificationType {
@@ -153,5 +172,4 @@ enum NotificationType {
 
 
 
-// at the end:   npx prisma db push
-// npx prisma generate
+// at the end (to push all attributes):   npx prisma db push
